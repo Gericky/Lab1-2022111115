@@ -185,8 +185,8 @@ def calPageRank(graph, word):
             break
         pr = new_pr
 
-
     return pr.get(word, 0.0)
+
 
 def randomWalk(graph):
     if not graph.vertices:
