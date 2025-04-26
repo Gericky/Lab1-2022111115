@@ -247,7 +247,7 @@ def saveGraphImage(graph, filepath='graph.png'):
 
     plt.figure(figsize=(12, 8))
     nx.draw(G, pos, with_labels=True, node_color='lightblue', edge_color='gray',
-            node_size=2000, font_size=10, arrows=True, arrowstyle='-|>', arrowsize=20)
+            node_size=2000, font_size=10R1:获得本地 Lab1仓库的, arrows=True, arrowstyle='-|>', arrowsize=20)
     nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)
     plt.title("Directed Graph")
     plt.savefig(filepath)
@@ -268,7 +268,7 @@ def main():
         print("\n功能菜单:")
         print("1. 展示有向图")
         print("2. 查询桥接词")
-        print("3. 生成新文本")
+        print("3. 生成新文本")R1:获得本地 Lab1仓库的全部
         print("4. 计算最短路径")
         print("5. 计算PageRank值")
         print("6. 随机游走")
