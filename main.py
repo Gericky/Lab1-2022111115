@@ -3,6 +3,7 @@ from collections import defaultdict
 import random
 import matplotlib.pyplot as plt
 import networkx as nx
+import numpy as np
 
 
 class Graph:
@@ -141,54 +142,40 @@ def dijkstra(graph, start, end):
 
     return paths, total_length
 
-def calPageRank(graph, word, d=0.85, max_iter=100, tol=1e-6):
-    """计算指定节点的 PageRank 值"""
+
+def calPageRank(graph, word, d=0.85, max_iterations=1000, tol=1e-6):
+    """计算单词的PageRank值"""
     if word not in graph.vertices:
         return f"No \"{word}\" in the graph!"
 
-    vertices = graph.vertices
-    num_vertices = len(vertices)
-    if num_vertices == 0:
-        return 0.0
+    n = len(graph.vertices)
+    # 创建邻接矩阵
+    adj_matrix = np.zeros((n, n))
+    vertex_to_index = {vertex: i for i, vertex in enumerate(graph.vertices)}
 
-    # 初始化 PageRank 值
-    pr = {vertex: 1.0 / num_vertices for vertex in vertices}
+    # 填充邻接矩阵
+    for from_vertex in graph.edges:
+        out_degree = len(graph.edges[from_vertex])
+        if out_degree > 0:
+            for to_vertex in graph.edges[from_vertex]:
+                i = vertex_to_index[from_vertex]
+                j = vertex_to_index[to_vertex]
+                adj_matrix[j, i] = 1.0 / out_degree
 
-    # 计算每个节点的出度
-    out_degree = {vertex: len(graph.edges.get(vertex, [])) for vertex in vertices}
+    # 初始化PageRank值
+    pr = np.ones(n) / n
 
-    for _ in range(max_iter):
+    # 迭代计算PageRank
+    for _ in range(max_iterations):
         prev_pr = pr.copy()
-        new_pr = {vertex: 0.0 for vertex in vertices}
+        pr = (1 - d) / n + d * np.dot(adj_matrix, pr)
 
-        # 处理悬挂节点 (Dangling nodes) 的贡献
-        dangling_sum = d * sum(prev_pr[vertex] for vertex in vertices if out_degree[vertex] == 0) / num_vertices
-
-        # 计算每个节点的 PageRank
-        for vertex in vertices:
-            # 基本概率 (Teleportation) + 悬挂节点贡献
-            new_pr[vertex] = (1 - d) / num_vertices + dangling_sum
-
-            # 来自入链的贡献
-            rank_from_inlinks = 0
-            # 遍历所有节点，查找指向当前 vertex 的节点 (linker)
-            for linker in vertices:
-                if vertex in graph.edges.get(linker, []):
-                    linker_out_degree = out_degree.get(linker, 0)
-                    # 确保 linker 不是悬挂节点
-                    if linker_out_degree > 0:
-                        rank_from_inlinks += d * (prev_pr[linker] / linker_out_degree)
-
-            new_pr[vertex] += rank_from_inlinks
-
-        pr = new_pr
-
-        # 检查收敛性
-        diff = sum(abs(pr[vertex] - prev_pr[vertex]) for vertex in vertices)
-        if diff < tol:
+        # 检查收敛
+        if np.linalg.norm(pr - prev_pr, 1) < tol:
             break
 
-    return pr.get(word, 0.0) # 使用 get 以防万一 word 不在 pr 中 (虽然前面检查过)
+    # 返回指定单词的PageRank值
+    return pr[vertex_to_index[word]]
 
 def randomWalk(graph):
     if not graph.vertices:
@@ -197,7 +184,7 @@ def randomWalk(graph):
     # 随机选择起始节点
     current = random.choice(graph.vertices)
     path = [current]
-    visited_edges = set()  # 记录已访��的边
+    visited_edges = set()  # 记录已访问的边
 
     print(f"随机游走从 {current} 开始...\n")
 
@@ -211,9 +198,9 @@ def randomWalk(graph):
             print("当前节点没有出边，游走结束。")
             break
 
-        # 提示用户是否继续，按 `y` 表示继续，否则退出
-        user_input = input(f"当前节点：{current}，请选择是否继续游走（y/n）：")
-        if user_input.lower() != 'y':
+        # 提示用户是否继续，按回车默认继续，否则退出
+        user_input = input(f"当前节点：{current}，请选择是否继续游走（回车继续，输入 n 停止）：")
+        if user_input.lower() == 'n':
             print("用户终止了游走。")
             break
 
@@ -225,7 +212,6 @@ def randomWalk(graph):
 
     # 输出并保存结果到文件
     path_str = "->".join(path)
-
 
     # 将遍历结果写入文件
     with open("random_walk_result.txt", "w", encoding="utf-8") as file:
@@ -247,7 +233,7 @@ def saveGraphImage(graph, filepath='graph.png'):
 
     plt.figure(figsize=(12, 8))
     nx.draw(G, pos, with_labels=True, node_color='lightblue', edge_color='gray',
-            node_size=2000, font_size=10R1:获得本地 Lab1仓库的, arrows=True, arrowstyle='-|>', arrowsize=20)
+            node_size=2000, font_size=10, arrows=True, arrowstyle='-|>', arrowsize=20)
     nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)
     plt.title("Directed Graph")
     plt.savefig(filepath)
@@ -268,7 +254,7 @@ def main():
         print("\n功能菜单:")
         print("1. 展示有向图")
         print("2. 查询桥接词")
-        print("3. 生成新文本")R1:获得本地 Lab1仓库的全部
+        print("3. 生成新文本")
         print("4. 计算最短路径")
         print("5. 计算PageRank值")
         print("6. 随机游走")
