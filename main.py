@@ -143,39 +143,49 @@ def dijkstra(graph, start, end):
     return paths, total_length
 
 
-def calPageRank(graph, word, d=0.85, max_iterations=1000, tol=1e-6):
-    """计算单词的PageRank值"""
+def calPageRank(graph, word):
+    """计算指定单词的PageRank值，阻尼系数d固定为0.85"""
     if word not in graph.vertices:
         return f"No \"{word}\" in the graph!"
 
-    n = len(graph.vertices)
-    # 创建邻接矩阵
-    adj_matrix = np.zeros((n, n))
-    vertex_to_index = {vertex: i for i, vertex in enumerate(graph.vertices)}
+    d = 0.85  # 固定阻尼系数
+    max_iterations = 100
+    tolerance = 1e-6
+    vertices = graph.vertices
+    n = len(vertices)
+    if n == 0:
+        return 0.0
 
-    # 填充邻接矩阵
-    for from_vertex in graph.edges:
-        out_degree = len(graph.edges[from_vertex])
-        if out_degree > 0:
-            for to_vertex in graph.edges[from_vertex]:
-                i = vertex_to_index[from_vertex]
-                j = vertex_to_index[to_vertex]
-                adj_matrix[j, i] = 1.0 / out_degree
+    # 预处理：获取每个节点的出度和入边关系
+    out_degree = {v: len(graph.edges[v]) for v in vertices}
+    in_edges = defaultdict(list)
+    for u in graph.edges:
+        for v in graph.edges[u]:
+            in_edges[v].append(u)
+    dangling_nodes = [v for v in vertices if out_degree[v] == 0]
 
     # 初始化PageRank值
-    pr = np.ones(n) / n
+    pr = {v: 1.0 / n for v in vertices}
 
-    # 迭代计算PageRank
     for _ in range(max_iterations):
-        prev_pr = pr.copy()
-        pr = (1 - d) / n + d * np.dot(adj_matrix, pr)
+        new_pr = {}
+        sum_pr_dangling = sum(pr[v] for v in dangling_nodes)
+
+        for v in vertices:
+            # 计算来自入边的贡献
+            in_contrib = sum(pr[u] / out_degree[u] for u in in_edges[v] if out_degree[u] > 0)
+            # 计算来自悬挂节点的贡献
+            dangling_contrib = sum_pr_dangling / n if n > 0 else 0
+            # 更新PageRank
+            new_pr[v] = (1 - d) / n + d * (in_contrib + dangling_contrib)
 
         # 检查收敛
-        if np.linalg.norm(pr - prev_pr, 1) < tol:
+        delta = sum(abs(new_pr[v] - pr[v]) for v in vertices)
+        if delta < tolerance:
             break
+        pr = new_pr
 
-    # 返回指定单词的PageRank值
-    return pr[vertex_to_index[word]]
+    return pr.get(word, 0.0)
 
 def randomWalk(graph):
     if not graph.vertices:
