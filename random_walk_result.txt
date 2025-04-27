@@ -1,1 +1,2 @@
-strange->new->civilizations12312141241
+strange->new->civilizations
+没啥用的测试
