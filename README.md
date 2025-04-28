@@ -1,4 +1,2 @@
 软工LAb1
-xixixixiixixi,test
-小测试2
-更新
+修改完毕，允许起飞
