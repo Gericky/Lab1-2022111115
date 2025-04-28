@@ -225,34 +225,60 @@ def randomWalk(graph):
 
     current = random.choice(graph.vertices)
     path = [current]
-    visited_edges = set()
+    visited_edges = set()  # 用于记录访问过的边
 
     print(f"随机游走从 {current} 开始...\n")
 
-    while current in graph.vertices:
-        available_edges = [(current, next_v) for next_v in graph.edges[current]
-                           if (current, next_v) not in visited_edges]
+    while True:  # 修改为无限循环，由内部条件break
+        print(f"当前节点：{current}")
+
+        # 查找所有从未访问过的出边
+        available_edges = [(current, next_v) for next_v in graph.edges.get(current, [])]
 
         if not available_edges:
             print("当前节点没有出边，游走结束。")
             break
 
-        user_input = input(f"当前节点：{current}，按回车继续，输入任意字符后回车停止：")
+        # 检查是否有未访问过的出边
+        unvisited_outgoing_edges = [(u, v) for u, v in available_edges if (u, v) not in visited_edges]
+
+        if not unvisited_outgoing_edges:
+            # 如果所有出边都已被访问过，也结束
+            print("当前节点的所有出边都已被访问过，游走结束。")
+            break
+
+        # 用户输入以决定是否继续或停止
+        user_input = input("按回车继续，输入任意字符后回车停止：")
         if user_input != '':
             print("用户终止了游走。")
             break
 
+        # 从 *所有* 可用出边中随机选择一条 (允许重复访问节点，但要检测重复边)
         from_v, to_v = random.choice(available_edges)
-        visited_edges.add((from_v, to_v))
-        path.append(to_v)
-        current = to_v
+
+        # 检查选择的边是否已经被访问过
+        if (from_v, to_v) in visited_edges:
+            print(f"检测到重复边: {from_v} -> {to_v}，游走结束。")
+            # 将重复的边和目标节点加入路径以显示循环点
+            path.append(to_v)
+            break
+        else:
+            # 如果边未被访问，则添加到访问集合，并更新路径和当前节点
+            visited_edges.add((from_v, to_v))
+            path.append(to_v)
+            current = to_v
 
     path_str = "->".join(path)
 
-    with open("random_walk_result.txt", "w", encoding="utf-8") as file:
-        file.write(path_str)
 
-    return path_str
+    try:
+        with open("random_walk_result.txt", "w", encoding="utf-8") as file:
+            file.write(path_str)
+        print("路径已保存到 random_walk_result.txt")
+    except IOError as e:
+        print(f"无法写入文件 random_walk_result.txt: {e}")
+
+    return path_str  # 返回最终路径字符串
 
 
 def saveGraphImage(graph, filepath='graph.png'):
