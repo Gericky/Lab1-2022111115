@@ -152,7 +152,11 @@ def dijkstra(graph, start, end):
     return paths, total_length
 
 
-def calPageRank(graph, word, d=0.85, max_iter=100, tol=1e-6, use_word_frequency_init=True):
+def calPageRank(graph, word):
+    d = 0.85
+    max_iter = 100
+    tol = 1e-6
+    use_word_frequency_init = True
     if word not in graph.vertices:
         return f"No \"{word}\" in the graph!"
 
