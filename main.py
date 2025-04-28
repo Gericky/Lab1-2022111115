@@ -21,7 +21,10 @@ class Graph:
             self.add_vertex(from_vertex)
         if to_vertex not in self.vertices:
             self.add_vertex(to_vertex)
-        self.edges[from_vertex].append(to_vertex)
+        # 检查 to_vertex 是否已在邻接列表中，如果不在则添加
+        if to_vertex not in self.edges[from_vertex]:
+            self.edges[from_vertex].append(to_vertex)
+        # 总是更新或设置边的权重
         edge = (from_vertex, to_vertex)
         self.weights[edge] = self.weights.get(edge, 0) + 1
 
@@ -259,15 +262,24 @@ def saveGraphImage(graph, filepath='graph.png'):
     for (from_v, to_v), weight in graph.weights.items():
         G.add_edge(from_v, to_v, weight=weight)
 
-    pos = nx.spring_layout(G, seed=42)
+    pos = nx.kamada_kawai_layout(G)  # 尝试 Kamada-Kawai layout，通常能更好地分散节点
     edge_labels = nx.get_edge_attributes(G, 'weight')
 
-    plt.figure(figsize=(12, 8))
+    plt.figure(figsize=(20, 15))  # 保持较大的画布尺寸
     nx.draw(G, pos, with_labels=True, node_color='lightblue', edge_color='gray',
-            node_size=2000, font_size=10, arrows=True, arrowstyle='-|>', arrowsize=20)
-    nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)
-    plt.title("Directed Graph")
-    plt.savefig(filepath)
+            node_size=1500,  # 显著减小节点大小
+            font_size=9,  # 节点标签字体大小
+            arrows=True,
+            arrowstyle='-|>',
+            arrowsize=20)  # 调整箭头大小
+    nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, label_pos=0.3,
+                                 font_size=8,  # 边标签字体大小
+                                 font_color='darkred',  # 使用深色以便区分
+                                 bbox=dict(facecolor='white', alpha=0.5, edgecolor='none', boxstyle='round,pad=0.1'))  # 添加背景框减少遮挡
+
+    plt.title("Directed Graph Visualization")
+    plt.margins(0.1)  # 可以尝试添加一些边距
+    plt.savefig(filepath, dpi=300)
     plt.close()
     return f"图像已保存至 {filepath}"
 
