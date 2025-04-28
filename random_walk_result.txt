@@ -1,2 +1,1 @@
-strange->new->civilizations
-没啥用的测试
+life->and->new->life

@@ -7,45 +7,57 @@ import networkx as nx
 
 class Graph:
     def __init__(self):
-        self.vertices= []
-        self.edges= defaultdict(list)
-        self.weights={}
-    def add_vertex(self,vertex):
+        self.vertices = []
+        self.edges = defaultdict(list)
+        self.weights = {}
+        self.word_counts = defaultdict(int)  # 添加词频统计
+
+    def add_vertex(self, vertex):
         if vertex not in self.vertices:
             self.vertices.append(vertex)
 
-    def add_edge(self,from_vertex,to_vertex):
+    def add_edge(self, from_vertex, to_vertex):
         if from_vertex not in self.vertices:
             self.add_vertex(from_vertex)
         if to_vertex not in self.vertices:
             self.add_vertex(to_vertex)
         self.edges[from_vertex].append(to_vertex)
-        edge=(from_vertex,to_vertex)
-        self.weights[edge]=self.weights.get(edge,0)+1
+        edge = (from_vertex, to_vertex)
+        self.weights[edge] = self.weights.get(edge, 0) + 1
 
-    def build_from_text(self,filename):
+    def build_from_text(self, filename):
         try:
-            with open(filename,'r',encoding='utf-8') as file:
+            with open(filename, 'r', encoding='utf-8') as file:
                 text = file.read().lower()
-                word = re.findall(r'\b[a-z]+\b',text)
-                for i in range(len(word)-1):
-                    self.add_edge(word[i],word[i+1])
+                words = re.findall(r'\b[a-z]+\b', text)
+                if not words:
+                    return False  # 如果没有单词，则构建失败
+                # 统计词频
+                for word in words:
+                    self.word_counts[word] += 1
+                # 构建图的边
+                for i in range(len(words) - 1):
+                    self.add_edge(words[i], words[i + 1])
+                # 确保所有计数的单词都作为顶点存在（即使它们没有边）
+                for word in self.word_counts:
+                    self.add_vertex(word)
                 return True
-        except Exception :
+        except Exception:
             return False
 
+
 def showDirectedGraph(graph):
-    result="有向图结构如下：\n"
-    result+=f"顶点数：{len(graph.vertices)}\n"
-    result+=f"边数：{sum(len(v) for v in graph.edges.values())}\n"
+    result = "有向图结构如下：\n"
+    result += f"顶点数：{len(graph.vertices)}\n"
+    result += f"边数：{sum(len(v) for v in graph.edges.values())}\n"
     for from_v in graph.edges:
         for to_v in graph.edges[from_v]:
-            w=graph.weights[(from_v,to_v)]
-            result+=f"{from_v} -> {to_v} (权重：{w})\n"
+            w = graph.weights[(from_v, to_v)]
+            result += f"{from_v} -> {to_v} (权重：{w})\n"
     return result
 
-def queryBridgeWords(graph,word1,word2):
 
+def queryBridgeWords(graph, word1, word2):
     if word1 not in graph.vertices or word2 not in graph.vertices:
         if word1 not in graph.vertices and word2 not in graph.vertices:
             return f"No \"{word1}\" and \"{word2}\" in the graph!"
@@ -53,10 +65,10 @@ def queryBridgeWords(graph,word1,word2):
             return f"No \"{word1}\" in the graph!"
         else:
             return f"No \"{word2}\" in the graph!"
-    bridge_words=[]
+    bridge_words = []
 
     for bridge in graph.vertices:
-        if bridge in graph.edges.get(word1,[]) and word2 in graph.edges.get(bridge,[]):
+        if bridge in graph.edges.get(word1, []) and word2 in graph.edges.get(bridge, []):
             bridge_words.append(bridge)
 
     if not bridge_words:
@@ -67,25 +79,26 @@ def queryBridgeWords(graph,word1,word2):
     else:
         return f"The bridge words from \"{word1}\" to \"{word2}\" are: {', '.join(bridge_words[:-1])} and {bridge_words[-1]}"
 
+
 def generateNewText(graph, inputText):
     words = re.findall(r'\b[a-z]+\b', inputText.lower())
-    if len(words)<=1:
+    if len(words) <= 1:
         return inputText
-    result =[words[0]]
-    for i in range(len(words)-1):
-        word1 ,word2 = words[i], words[i+1]
-        bridges=[b for b in graph.edges.get(word1,[]) if word2 in graph.edges.get(b,[])]
+    result = [words[0]]
+    for i in range(len(words) - 1):
+        word1, word2 = words[i], words[i + 1]
+        bridges = [b for b in graph.edges.get(word1, []) if word2 in graph.edges.get(b, [])]
         if bridges:
             result.append(random.choice(bridges))
         result.append(word2)
     return ' '.join(result)
-#可选功能，如果输入一个那么就展示所有，并且输出所有最短路径
+
+
 def calcShortestPath(graph, word1, word2=None):
     if word1 not in graph.vertices:
         return f"No \"{word1}\" in the graph!"
 
     if word2 is None:
-        # 计算 word1 到所有其他节点的最短路径，并显示路径长度
         results = []
         for word in graph.vertices:
             if word != word1:
@@ -94,13 +107,11 @@ def calcShortestPath(graph, word1, word2=None):
                     results.append(f"From \"{word1}\" to \"{word}\": {'->'.join(path)} (Length: {length})")
         return '\n'.join(results)
 
-    # 如果给出第二个单词，计算 word1 到 word2 的最短路径
     paths, length = dijkstra(graph, word1, word2)
     return '\n'.join([f"{'->'.join(path)} (Length: {length})" for path in paths])
 
 
 def reconstruct_paths(start, current, previous):
-    """根据前驱节点重建所有最短路径"""
     if current == start:
         return [[start]]
 
@@ -110,11 +121,11 @@ def reconstruct_paths(start, current, previous):
             paths.append(path + [current])
     return paths
 
+
 def dijkstra(graph, start, end):
-    """Dijkstra算法：计算start到end的最短路径，并返回所有最短路径和路径的总长度"""
     distances = {vertex: float('infinity') for vertex in graph.vertices}
     distances[start] = 0
-    previous = {vertex: [] for vertex in graph.vertices}  # 允许多个前驱节点
+    previous = {vertex: [] for vertex in graph.vertices}
     unvisited = set(graph.vertices)
 
     while unvisited:
@@ -131,18 +142,17 @@ def dijkstra(graph, start, end):
                 distance = distances[current] + weight
                 if distance < distances[neighbor]:
                     distances[neighbor] = distance
-                    previous[neighbor] = [current]  # 新发现更短的路径，更新前驱节点
+                    previous[neighbor] = [current]
                 elif distance == distances[neighbor]:
-                    previous[neighbor].append(current)  # 如果发现相同长度的路径，保存前驱节点
+                    previous[neighbor].append(current)
 
-    # 使用独立的 reconstruct_paths 函数重建所有最短路径
     paths = reconstruct_paths(start, end, previous)
-    total_length = distances[end]  # 所有最短路径的长度都是相同的，等于计算出的最短距离
+    total_length = distances[end]
 
     return paths, total_length
 
-def calPageRank(graph, word, d=0.85, max_iter=100, tol=1e-6):
-    """计算指定节点的 PageRank 值"""
+
+def calPageRank(graph, word, d=0.85, max_iter=100, tol=1e-6, use_word_frequency_init=True):
     if word not in graph.vertices:
         return f"No \"{word}\" in the graph!"
 
@@ -151,90 +161,93 @@ def calPageRank(graph, word, d=0.85, max_iter=100, tol=1e-6):
     if num_vertices == 0:
         return 0.0
 
-    # 初始化 PageRank 值
-    pr = {vertex: 1.0 / num_vertices for vertex in vertices}
+    if use_word_frequency_init and graph.word_counts:
+        total_word_count = sum(graph.word_counts.values())
+        if total_word_count > 0:
+            pr = {vertex: graph.word_counts.get(vertex, 0) / total_word_count for vertex in vertices}
+            current_sum = sum(pr.values())
+            if current_sum > 0:
+                epsilon = 1e-9
+                pr = {v: (p / current_sum) + epsilon for v, p in pr.items()}
+                final_sum = sum(pr.values())
+                pr = {v: p / final_sum for v, p in pr.items()}
+            else:
+                pr = {vertex: 1.0 / num_vertices for vertex in vertices}
+        else:
+            pr = {vertex: 1.0 / num_vertices for vertex in vertices}
+    else:
+        pr = {vertex: 1.0 / num_vertices for vertex in vertices}
 
-    # 计算每个节点的出度
     out_degree = {vertex: len(graph.edges.get(vertex, [])) for vertex in vertices}
 
-    for _ in range(max_iter):
+    for iteration in range(max_iter):
         prev_pr = pr.copy()
         new_pr = {vertex: 0.0 for vertex in vertices}
 
-        # 处理悬挂节点 (Dangling nodes) 的贡献
-        dangling_sum = d * sum(prev_pr[vertex] for vertex in vertices if out_degree[vertex] == 0) / num_vertices
-
-        # 计算每个节点的 PageRank
+        dangling_sum = 0
         for vertex in vertices:
-            # 基本概率 (Teleportation) + 悬挂节点贡献
-            new_pr[vertex] = (1 - d) / num_vertices + dangling_sum
+            if out_degree[vertex] == 0:
+                dangling_sum += prev_pr[vertex]
 
-            # 来自入链的贡献
-            rank_from_inlinks = 0
-            # 遍历所有节点，查找指向当前 vertex 的节点 (linker)
+        dangling_contribution_per_node = d * dangling_sum / num_vertices
+
+        for vertex in vertices:
+            teleport_prob = (1 - d) / num_vertices
+
+            inlink_contribution = 0
             for linker in vertices:
                 if vertex in graph.edges.get(linker, []):
                     linker_out_degree = out_degree.get(linker, 0)
-                    # 确保 linker 不是悬挂节点
                     if linker_out_degree > 0:
-                        rank_from_inlinks += d * (prev_pr[linker] / linker_out_degree)
+                        inlink_contribution += d * (prev_pr[linker] / linker_out_degree)
 
-            new_pr[vertex] += rank_from_inlinks
+            new_pr[vertex] = teleport_prob + dangling_contribution_per_node + inlink_contribution
 
         pr = new_pr
 
-        # 检查收敛性
-        diff = sum(abs(pr[vertex] - prev_pr[vertex]) for vertex in vertices)
+        diff = sum(abs(pr[v] - prev_pr[v]) for v in vertices)
         if diff < tol:
             break
 
-    return pr.get(word, 0.0) # 使用 get 以防万一 word 不在 pr 中 (虽然前面检查过)
+    return pr.get(word, 0.0)
+
 
 def randomWalk(graph):
     if not graph.vertices:
         return "Empty graph!"
 
-    # 随机选择起始节点
     current = random.choice(graph.vertices)
     path = [current]
-    visited_edges = set()  # 记录已访��的边
+    visited_edges = set()
 
     print(f"随机游走从 {current} 开始...\n")
 
     while current in graph.vertices:
-        # 查找当前节点的出边
         available_edges = [(current, next_v) for next_v in graph.edges[current]
                            if (current, next_v) not in visited_edges]
 
-        # 如果没有可用的边，停止遍历
         if not available_edges:
             print("当前节点没有出边，游走结束。")
             break
 
-        # 提示用户是否继续，按 `y` 表示继续，否则退出
-        user_input = input(f"当前节点：{current}，请选择是否继续游走（y/n）：")
-        if user_input.lower() != 'y':
+        user_input = input(f"当前节点：{current}，按回车继续，输入任意字符后回车停止：")
+        if user_input != '':
             print("用户终止了游走。")
             break
 
-        # 随机选择一条未访问的边
         from_v, to_v = random.choice(available_edges)
-        visited_edges.add((from_v, to_v))  # 标记这条边为已访问
+        visited_edges.add((from_v, to_v))
         path.append(to_v)
         current = to_v
 
-    # 输出并保存结果到文件
     path_str = "->".join(path)
 
-
-    # 将遍历结果写入文件
     with open("random_walk_result.txt", "w", encoding="utf-8") as file:
         file.write(path_str)
 
     return path_str
 
 
-#可选功能，保存为图片
 def saveGraphImage(graph, filepath='graph.png'):
     G = nx.DiGraph()
     for vertex in graph.vertices:
@@ -253,7 +266,6 @@ def saveGraphImage(graph, filepath='graph.png'):
     plt.savefig(filepath)
     plt.close()
     return f"图像已保存至 {filepath}"
-
 
 
 def main():
@@ -289,16 +301,16 @@ def main():
             print(generateNewText(graph, inputText))
         elif choice == '4':
             word1 = input("请输入起始单词: ").lower()
-            word2= input("请输入目标单词 (留空则计算到所有单词): ").lower()
-            if word2== "":
-                print(calcShortestPath(graph, word1))  # 传入 None 或不传 word2
+            word2 = input("请输入目标单词 (留空则计算到所有单词): ").lower()
+            if word2 == "":
+                print(calcShortestPath(graph, word1))
             else:
                 print(calcShortestPath(graph, word1, word2))
         elif choice == '5':
             word = input("请输入单词: ").lower()
             pr = calPageRank(graph, word)
             if isinstance(pr, float):
-                print(f"PageRank值: {pr:.6f}")
+                print(f"PageRank值 (基于词频初始化): {pr:.6f}")
             else:
                 print(pr)
         elif choice == '6':
