@@ -71,16 +71,20 @@ def queryBridgeWords(graph, word1, word2):
     bridge_words = []
 
     for bridge in graph.vertices:
-        if bridge in graph.edges.get(word1, []) and word2 in graph.edges.get(bridge, []):
+        if (
+                bridge in graph.edges.get(word1, []) and
+                word2 in graph.edges.get(bridge, [])
+        ):
             bridge_words.append(bridge)
-
     if not bridge_words:
         return f"No bridge words from \"{word1}\" to \"{word2}\"!"
 
     if len(bridge_words) == 1:
-        return f"The bridge word from \"{word1}\" to \"{word2}\" is: {bridge_words[0]}"
+        return (f"The bridge word from \"{word1}\" to \"{word2}\" "
+                f"is: {bridge_words[0]}")
     else:
-        return f"The bridge words from \"{word1}\" to \"{word2}\" are: {', '.join(bridge_words[:-1])} and {bridge_words[-1]}"
+        return (f"The bridge words from \"{word1}\" to \"{word2}\" are: "
+                f"{', '.join(bridge_words[:-1])} and {bridge_words[-1]}")
 
 
 def generateNewText(graph, inputText):
@@ -90,7 +94,8 @@ def generateNewText(graph, inputText):
     result = [words[0]]
     for i in range(len(words) - 1):
         word1, word2 = words[i], words[i + 1]
-        bridges = [b for b in graph.edges.get(word1, []) if word2 in graph.edges.get(b, [])]
+        bridges = [b for b in graph.edges.get(word1, [])
+                   if word2 in graph.edges.get(b, [])]
         if bridges:
             result.append(random.choice(bridges))
         result.append(word2)
@@ -107,11 +112,16 @@ def calcShortestPath(graph, word1, word2=None):
             if word != word1:
                 paths, length = dijkstra(graph, word1, word)
                 for path in paths:
-                    results.append(f"From \"{word1}\" to \"{word}\": {'->'.join(path)} (Length: {length})")
+                    results.append(
+                        f"From \"{word1}\" to \"{word}\": {'->'.join(path)} "
+                        f"(Length: {length})"
+                    )
         return '\n'.join(results)
-
     paths, length = dijkstra(graph, word1, word2)
-    return '\n'.join([f"{'->'.join(path)} (Length: {length})" for path in paths])
+    return '\n'.join([
+        f"{'->'.join(path)} (Length: {length})"
+        for path in paths
+    ])
 
 
 def reconstruct_paths(start, current, previous):
@@ -171,7 +181,8 @@ def calPageRank(graph, word):
     if use_word_frequency_init and graph.word_counts:
         total_word_count = sum(graph.word_counts.values())
         if total_word_count > 0:
-            pr = {vertex: graph.word_counts.get(vertex, 0) / total_word_count for vertex in vertices}
+            pr = {vertex: graph.word_counts.get(vertex, 0) / total_word_count
+                  for vertex in vertices}
             current_sum = sum(pr.values())
             if current_sum > 0:
                 epsilon = 1e-9
@@ -185,7 +196,8 @@ def calPageRank(graph, word):
     else:
         pr = {vertex: 1.0 / num_vertices for vertex in vertices}
 
-    out_degree = {vertex: len(graph.edges.get(vertex, [])) for vertex in vertices}
+    out_degree = {vertex: len(graph.edges.get(vertex, []))
+                  for vertex in vertices}
 
     for iteration in range(max_iter):
         prev_pr = pr.copy()
@@ -206,9 +218,11 @@ def calPageRank(graph, word):
                 if vertex in graph.edges.get(linker, []):
                     linker_out_degree = out_degree.get(linker, 0)
                     if linker_out_degree > 0:
-                        inlink_contribution += d * (prev_pr[linker] / linker_out_degree)
+                        inlink_contribution += d * (prev_pr[linker] /
+                                                    linker_out_degree)
 
-            new_pr[vertex] = teleport_prob + dangling_contribution_per_node + inlink_contribution
+            new_pr[vertex] = (teleport_prob + dangling_contribution_per_node +
+                              inlink_contribution)
 
         pr = new_pr
 
@@ -233,14 +247,16 @@ def randomWalk(graph):
         print(f"当前节点：{current}")
 
         # 查找所有从未访问过的出边
-        available_edges = [(current, next_v) for next_v in graph.edges.get(current, [])]
+        available_edges = [(current, next_v)
+                           for next_v in graph.edges.get(current, [])]
 
         if not available_edges:
             print("当前节点没有出边，游走结束。")
             break
 
         # 检查是否有未访问过的出边
-        unvisited_outgoing_edges = [(u, v) for u, v in available_edges if (u, v) not in visited_edges]
+        unvisited_outgoing_edges = [(u, v) for u, v in available_edges
+                                    if (u, v) not in visited_edges]
 
         if not unvisited_outgoing_edges:
             # 如果所有出边都已被访问过，也结束
@@ -270,7 +286,6 @@ def randomWalk(graph):
 
     path_str = "->".join(path)
 
-
     try:
         with open("random_walk_result.txt", "w", encoding="utf-8") as file:
             file.write(path_str)
@@ -292,16 +307,22 @@ def saveGraphImage(graph, filepath='graph.png'):
     edge_labels = nx.get_edge_attributes(G, 'weight')
 
     plt.figure(figsize=(20, 15))  # 保持较大的画布尺寸
-    nx.draw(G, pos, with_labels=True, node_color='lightblue', edge_color='gray',
+    nx.draw(G, pos, with_labels=True, node_color='lightblue',
+            edge_color='gray',
             node_size=1500,  # 显著减小节点大小
             font_size=9,  # 节点标签字体大小
             arrows=True,
             arrowstyle='-|>',
             arrowsize=20)  # 调整箭头大小
-    nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, label_pos=0.3,
-                                 font_size=8,  # 边标签字体大小
-                                 font_color='darkred',  # 使用深色以便区分
-                                 bbox=dict(facecolor='white', alpha=0.5, edgecolor='none', boxstyle='round,pad=0.1'))  # 添加背景框减少遮挡
+    nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels,
+                                 label_pos=0.3,
+                                 font_size=8,
+                                 font_color='darkred',
+                                 bbox=dict(facecolor='white',
+                                           alpha=0.5,
+                                           edgecolor='none',
+                                           boxstyle='round,'
+                                                    'pad=0.1'))
 
     plt.title("Directed Graph Visualization")
     plt.margins(0.1)  # 可以尝试添加一些边距
