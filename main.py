@@ -1,8 +1,8 @@
 import re
 from collections import defaultdict
-import random
 import matplotlib.pyplot as plt
 import networkx as nx
+import secrets
 
 
 class Graph:
@@ -97,7 +97,7 @@ def generateNewText(graph, inputText):
         bridges = [b for b in graph.edges.get(word1, [])
                    if word2 in graph.edges.get(b, [])]
         if bridges:
-            result.append(random.choice(bridges))
+            result.append(secrets.choice(bridges))
         result.append(word2)
     return ' '.join(result)
 
@@ -237,7 +237,7 @@ def randomWalk(graph):
     if not graph.vertices:
         return "Empty graph!"
 
-    current = random.choice(graph.vertices)
+    current = secrets.choice(graph.vertices)
     path = [current]
     visited_edges = set()  # 用于记录访问过的边
 
@@ -270,7 +270,7 @@ def randomWalk(graph):
             break
 
         # 从 *所有* 可用出边中随机选择一条 (允许重复访问节点，但要检测重复边)
-        from_v, to_v = random.choice(available_edges)
+        from_v, to_v = secrets.choice(available_edges)
 
         # 检查选择的边是否已经被访问过
         if (from_v, to_v) in visited_edges:
